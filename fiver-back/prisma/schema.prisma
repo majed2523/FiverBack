@@ -1,0 +1,115 @@
+// -----------------------------------------
+// PRISMA CONFIG
+// -----------------------------------------
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // or mysql/sqlite/etc.
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------------------------
+// ENUMS
+// -----------------------------------------
+enum Role {
+  CLIENT
+  PROVIDER
+}
+
+enum DemandStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
+
+// -----------------------------------------
+// MODELS
+// -----------------------------------------
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password      String
+  phone         String?
+  phoneVerified Boolean  @default(false)
+  role          Role
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  client   Client?
+  provider Provider?
+}
+
+model Client {
+  id        String  @id
+  user      User    @relation(fields: [id], references: [id])
+  firstName String?
+  lastName  String?
+
+  demands Demand[]
+  reviews Review[]
+}
+
+model Provider {
+  id           String  @id
+  user         User    @relation(fields: [id], references: [id])
+  isEnterprise Boolean @default(false)
+  CIN          String?
+  cinVerified  Boolean @default(false)
+  bio          String?
+  location     String?
+
+  services ProviderService[]
+  demands  Demand[]
+  reviews  Review[]
+}
+
+model Service {
+  id        String            @id @default(uuid())
+  name      String
+  providers ProviderService[]
+  demands   Demand[]
+}
+
+model ProviderService {
+  providerId String
+  serviceId  String
+
+  provider Provider @relation(fields: [providerId], references: [id])
+  service  Service  @relation(fields: [serviceId], references: [id])
+
+  @@id([providerId, serviceId])
+}
+
+model Demand {
+  id         String       @id @default(uuid())
+  clientId   String
+  providerId String
+  serviceId  String
+  status     DemandStatus @default(PENDING)
+  createdAt  DateTime     @default(now())
+
+  client   Client   @relation(fields: [clientId], references: [id])
+  provider Provider @relation(fields: [providerId], references: [id])
+  service  Service  @relation(fields: [serviceId], references: [id])
+  review   Review?
+}
+
+model Review {
+  id         String   @id @default(uuid())
+  demandId   String   @unique
+  clientId   String
+  providerId String
+  rating     Int
+  text       String?
+  createdAt  DateTime @default(now())
+
+  demand   Demand   @relation(fields: [demandId], references: [id])
+  client   Client   @relation(fields: [clientId], references: [id])
+  provider Provider @relation(fields: [providerId], references: [id])
+}

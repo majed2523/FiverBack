@@ -1,0 +1,13 @@
+// src/modules/demands/demands.entity.ts
+export class DemandEntity {
+  id!: string;
+  status!: string;
+  createdAt!: Date;
+  providerId!: string;
+  clientId!: string;
+  serviceId!: string;
+
+  constructor(partial: Partial<DemandEntity>) {
+    Object.assign(this, partial);
+  }
+}
