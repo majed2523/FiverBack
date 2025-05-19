@@ -1,93 +1,157 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from '@/components/ThemedText';
+import { AuthLayout } from '@/components/ui/AuthLayout';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { ProgressSteps } from '@/components/ui/ProgressSteps';
+import { COLORS, SPACING } from '@/constants/theme';
+import { Mail, Lock, ChevronLeft } from 'lucide-react-native';
 
 export default function RegisterProviderStep1() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{
+    email?: string;
+    password?: string;
+    confirmPassword?: string;
+    general?: string;
+  }>({});
   const router = useRouter();
 
-  const handleNext = () => {
-    if (!email || !password || !confirmPassword) {
-      Alert.alert('Erreur', 'Veuillez remplir tous les champs');
-      return;
+  const validateForm = () => {
+    const newErrors: {
+      email?: string;
+      password?: string;
+      confirmPassword?: string;
+    } = {};
+    let isValid = true;
+
+    if (!email) {
+      newErrors.email = "L'email est requis";
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = "Format d'email invalide";
+      isValid = false;
     }
 
-    if (password !== confirmPassword) {
-      Alert.alert('Erreur', 'Les mots de passe ne correspondent pas');
-      return;
+    if (!password) {
+      newErrors.password = 'Le mot de passe est requis';
+      isValid = false;
+    } else if (password.length < 6) {
+      newErrors.password =
+        'Le mot de passe doit contenir au moins 6 caractères';
+      isValid = false;
     }
+
+    if (!confirmPassword) {
+      newErrors.confirmPassword = 'La confirmation du mot de passe est requise';
+      isValid = false;
+    } else if (password !== confirmPassword) {
+      newErrors.confirmPassword = 'Les mots de passe ne correspondent pas';
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  const handleNext = () => {
+    if (!validateForm()) return;
 
     // Store data in params and navigate to next step
     router.push({
       pathname: '/auth/register-provider/step2',
       params: { email, password },
-    });
+    } as any);
   };
+
+  const footer = (
+    <Button
+      title="Retour"
+      variant="outline"
+      icon={<ChevronLeft size={20} color={COLORS.primary} />}
+      onPress={() => router.back()}
+      fullWidth
+    />
+  );
 
   return (
     <ThemedView style={styles.container}>
-      <Stack.Screen options={{ title: 'Inscription Prestataire (1/3)' }} />
+      <Stack.Screen options={{ headerShown: false }} />
 
-      <ThemedText type="title" style={styles.title}>
-        Créer votre compte
-      </ThemedText>
-
-      <ThemedText style={styles.label}>Email</ThemedText>
-      <TextInput
-        style={styles.input}
-        placeholder="Votre adresse email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-
-      <ThemedText style={styles.label}>Mot de passe</ThemedText>
-      <TextInput
-        style={styles.input}
-        placeholder="Choisir un mot de passe"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-
-      <ThemedText style={styles.label}>Confirmation du mot de passe</ThemedText>
-      <TextInput
-        style={styles.input}
-        placeholder="Confirmer votre mot de passe"
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-        secureTextEntry
-      />
-
-      <TouchableOpacity
-        style={styles.button}
-        onPress={handleNext}
-        disabled={loading}
+      <AuthLayout
+        title="Inscription Prestataire"
+        subtitle="Créez votre compte pour offrir vos services"
+        footer={footer}
+        showLogo={false}
       >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <ThemedText style={styles.buttonText}>Suivant</ThemedText>
-        )}
-      </TouchableOpacity>
+        <ProgressSteps
+          steps={['Compte', 'Professionnel', 'Profil']}
+          currentStep={0}
+        />
 
-      <TouchableOpacity style={styles.backLink} onPress={() => router.back()}>
-        <ThemedText style={styles.backLinkText}>Retour</ThemedText>
-      </TouchableOpacity>
+        {errors.general && (
+          <View style={styles.errorContainer}>
+            <ThemedText style={styles.errorText}>{errors.general}</ThemedText>
+          </View>
+        )}
+
+        <Input
+          label="Email"
+          placeholder="Votre adresse email"
+          value={email}
+          onChangeText={(text) => {
+            setEmail(text);
+            if (errors.email) setErrors({ ...errors, email: undefined });
+          }}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          leftIcon={<Mail size={20} color={COLORS.text} />}
+          error={errors.email}
+        />
+
+        <Input
+          label="Mot de passe"
+          placeholder="Choisir un mot de passe"
+          value={password}
+          onChangeText={(text) => {
+            setPassword(text);
+            if (errors.password) setErrors({ ...errors, password: undefined });
+          }}
+          secureTextEntry
+          leftIcon={<Lock size={20} color={COLORS.text} />}
+          error={errors.password}
+        />
+
+        <Input
+          label="Confirmation du mot de passe"
+          placeholder="Confirmer votre mot de passe"
+          value={confirmPassword}
+          onChangeText={(text) => {
+            setConfirmPassword(text);
+            if (errors.confirmPassword)
+              setErrors({ ...errors, confirmPassword: undefined });
+          }}
+          secureTextEntry
+          leftIcon={<Lock size={20} color={COLORS.text} />}
+          error={errors.confirmPassword}
+        />
+
+        <Button
+          title="Suivant"
+          onPress={handleNext}
+          loading={loading}
+          style={styles.nextButton}
+          fullWidth
+        />
+      </AuthLayout>
     </ThemedView>
   );
 }
@@ -95,40 +159,18 @@ export default function RegisterProviderStep1() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
   },
-  title: {
-    fontSize: 24,
-    marginBottom: 20,
-    marginTop: 20,
+  errorContainer: {
+    backgroundColor: COLORS.error,
+    padding: SPACING.sm,
+    borderRadius: 8,
+    marginBottom: SPACING.md,
+  },
+  errorText: {
+    color: COLORS.white,
     textAlign: 'center',
   },
-  label: {
-    marginBottom: 6,
-    fontWeight: '500',
-  },
-  input: {
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 15,
-  },
-  button: {
-    backgroundColor: '#4CAF50',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  backLink: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  backLinkText: {
-    color: '#4CAF50',
+  nextButton: {
+    marginTop: SPACING.lg,
   },
 });

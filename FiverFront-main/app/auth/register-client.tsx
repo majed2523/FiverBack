@@ -1,17 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from '@/components/ThemedText';
+import { AuthLayout } from '@/components/ui/AuthLayout';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 import { registerClient } from '@/lib/api/auth';
+import { COLORS, SPACING } from '@/constants/theme';
+import { User, Mail, Lock, ChevronLeft } from 'lucide-react-native';
 
 export default function RegisterClientScreen() {
   const [firstName, setFirstName] = useState('');
@@ -20,21 +19,71 @@ export default function RegisterClientScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    password?: string;
+    confirmPassword?: string;
+    general?: string;
+  }>({});
   const router = useRouter();
 
-  const handleRegister = async () => {
-    if (!firstName || !lastName || !email || !password || !confirmPassword) {
-      Alert.alert('Erreur', 'Veuillez remplir tous les champs');
-      return;
+  const validateForm = () => {
+    const newErrors: {
+      firstName?: string;
+      lastName?: string;
+      email?: string;
+      password?: string;
+      confirmPassword?: string;
+    } = {};
+    let isValid = true;
+
+    if (!firstName) {
+      newErrors.firstName = 'Le prénom est requis';
+      isValid = false;
     }
 
-    if (password !== confirmPassword) {
-      Alert.alert('Erreur', 'Les mots de passe ne correspondent pas');
-      return;
+    if (!lastName) {
+      newErrors.lastName = 'Le nom est requis';
+      isValid = false;
     }
+
+    if (!email) {
+      newErrors.email = "L'email est requis";
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = "Format d'email invalide";
+      isValid = false;
+    }
+
+    if (!password) {
+      newErrors.password = 'Le mot de passe est requis';
+      isValid = false;
+    } else if (password.length < 6) {
+      newErrors.password =
+        'Le mot de passe doit contenir au moins 6 caractères';
+      isValid = false;
+    }
+
+    if (!confirmPassword) {
+      newErrors.confirmPassword = 'La confirmation du mot de passe est requise';
+      isValid = false;
+    } else if (password !== confirmPassword) {
+      newErrors.confirmPassword = 'Les mots de passe ne correspondent pas';
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  const handleRegister = async () => {
+    if (!validateForm()) return;
 
     try {
       setLoading(true);
+      setErrors({});
       await registerClient({
         firstName,
         lastName,
@@ -43,84 +92,121 @@ export default function RegisterClientScreen() {
       });
 
       router.replace('/(client)/dashboard' as any);
-    } catch (error) {
-      Alert.alert(
-        "Erreur d'inscription",
-        "Une erreur est survenue lors de l'inscription"
-      );
-      console.error(error);
+    } catch (error: any) {
+      console.error('Register error:', error);
+      setErrors({
+        general:
+          "Une erreur est survenue lors de l'inscription. Veuillez réessayer.",
+      });
     } finally {
       setLoading(false);
     }
   };
 
+  const footer = (
+    <Button
+      title="Retour"
+      variant="outline"
+      icon={<ChevronLeft size={20} color={COLORS.primary} />}
+      onPress={() => router.back()}
+      fullWidth
+    />
+  );
+
   return (
     <ThemedView style={styles.container}>
-      <Stack.Screen options={{ title: 'Inscription Client' }} />
+      <Stack.Screen options={{ headerShown: false }} />
 
-      <ThemedText type="title" style={styles.title}>
-        Inscription Client
-      </ThemedText>
-
-      <ThemedText style={styles.label}>Prénom</ThemedText>
-      <TextInput
-        style={styles.input}
-        placeholder="Votre prénom"
-        value={firstName}
-        onChangeText={setFirstName}
-      />
-
-      <ThemedText style={styles.label}>Nom</ThemedText>
-      <TextInput
-        style={styles.input}
-        placeholder="Votre nom"
-        value={lastName}
-        onChangeText={setLastName}
-      />
-
-      <ThemedText style={styles.label}>Email</ThemedText>
-      <TextInput
-        style={styles.input}
-        placeholder="Votre adresse email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-
-      <ThemedText style={styles.label}>Mot de passe</ThemedText>
-      <TextInput
-        style={styles.input}
-        placeholder="Choisir un mot de passe"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-
-      <ThemedText style={styles.label}>Confirmation du mot de passe</ThemedText>
-      <TextInput
-        style={styles.input}
-        placeholder="Confirmer votre mot de passe"
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-        secureTextEntry
-      />
-
-      <TouchableOpacity
-        style={styles.button}
-        onPress={handleRegister}
-        disabled={loading}
+      <AuthLayout
+        title="Inscription Client"
+        subtitle="Créez votre compte client pour commencer"
+        footer={footer}
+        showLogo={false}
       >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <ThemedText style={styles.buttonText}>S'inscrire</ThemedText>
+        {errors.general && (
+          <View style={styles.errorContainer}>
+            <ThemedText style={styles.errorText}>{errors.general}</ThemedText>
+          </View>
         )}
-      </TouchableOpacity>
 
-      <TouchableOpacity style={styles.backLink} onPress={() => router.back()}>
-        <ThemedText style={styles.backLinkText}>Retour</ThemedText>
-      </TouchableOpacity>
+        <View style={styles.nameRow}>
+          <Input
+            label="Prénom"
+            placeholder="Votre prénom"
+            value={firstName}
+            onChangeText={(text) => {
+              setFirstName(text);
+              if (errors.firstName)
+                setErrors({ ...errors, firstName: undefined });
+            }}
+            error={errors.firstName}
+            leftIcon={<User size={20} color={COLORS.text} />}
+            style={styles.nameInput}
+          />
+          <Input
+            label="Nom"
+            placeholder="Votre nom"
+            value={lastName}
+            onChangeText={(text) => {
+              setLastName(text);
+              if (errors.lastName)
+                setErrors({ ...errors, lastName: undefined });
+            }}
+            error={errors.lastName}
+            leftIcon={<User size={20} color={COLORS.text} />}
+            style={styles.nameInput}
+          />
+        </View>
+
+        <Input
+          label="Email"
+          placeholder="Votre adresse email"
+          value={email}
+          onChangeText={(text) => {
+            setEmail(text);
+            if (errors.email) setErrors({ ...errors, email: undefined });
+          }}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          error={errors.email}
+          leftIcon={<Mail size={20} color={COLORS.text} />}
+        />
+
+        <Input
+          label="Mot de passe"
+          placeholder="Choisir un mot de passe"
+          value={password}
+          onChangeText={(text) => {
+            setPassword(text);
+            if (errors.password) setErrors({ ...errors, password: undefined });
+          }}
+          secureTextEntry
+          error={errors.password}
+          leftIcon={<Lock size={20} color={COLORS.text} />}
+        />
+
+        <Input
+          label="Confirmation du mot de passe"
+          placeholder="Confirmer votre mot de passe"
+          value={confirmPassword}
+          onChangeText={(text) => {
+            setConfirmPassword(text);
+            if (errors.confirmPassword)
+              setErrors({ ...errors, confirmPassword: undefined });
+          }}
+          secureTextEntry
+          error={errors.confirmPassword}
+          leftIcon={<Lock size={20} color={COLORS.text} />}
+        />
+
+        <Button
+          title="S'inscrire"
+          onPress={handleRegister}
+          loading={loading}
+          style={styles.registerButton}
+          fullWidth
+        />
+      </AuthLayout>
     </ThemedView>
   );
 }
@@ -128,40 +214,25 @@ export default function RegisterClientScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
   },
-  title: {
-    fontSize: 24,
-    marginBottom: 20,
-    marginTop: 20,
+  errorContainer: {
+    backgroundColor: COLORS.error,
+    padding: SPACING.sm,
+    borderRadius: 8,
+    marginBottom: SPACING.md,
+  },
+  errorText: {
+    color: COLORS.white,
     textAlign: 'center',
   },
-  label: {
-    marginBottom: 6,
-    fontWeight: '500',
+  nameRow: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
   },
-  input: {
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 15,
+  nameInput: {
+    flex: 1,
   },
-  button: {
-    backgroundColor: '#0066FF',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  backLink: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  backLinkText: {
-    color: '#0066FF',
+  registerButton: {
+    marginTop: SPACING.lg,
   },
 });

@@ -1,18 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-  Switch,
-  View,
-} from 'react-native';
+import { View, StyleSheet, Switch } from 'react-native';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
-import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { AuthLayout } from '@/components/ui/AuthLayout';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { ProgressSteps } from '@/components/ui/ProgressSteps';
+import { ThemedText } from '@/components/ThemedText';
+import { COLORS, SPACING } from '@/constants/theme';
+import { CreditCard, MapPin, ChevronLeft } from 'lucide-react-native';
 
 export default function RegisterProviderStep2() {
   const params = useLocalSearchParams();
@@ -20,13 +18,36 @@ export default function RegisterProviderStep2() {
   const [location, setLocation] = useState('');
   const [isEnterprise, setIsEnterprise] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{
+    CIN?: string;
+    location?: string;
+    general?: string;
+  }>({});
   const router = useRouter();
 
-  const handleNext = () => {
-    if (!CIN || !location) {
-      Alert.alert('Erreur', 'Veuillez remplir tous les champs');
-      return;
+  const validateForm = () => {
+    const newErrors: {
+      CIN?: string;
+      location?: string;
+    } = {};
+    let isValid = true;
+
+    if (!CIN) {
+      newErrors.CIN = 'Le numéro CIN est requis';
+      isValid = false;
     }
+
+    if (!location) {
+      newErrors.location = 'La localisation est requise';
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  const handleNext = () => {
+    if (!validateForm()) return;
 
     // Navigate to next step with all params
     router.push({
@@ -37,58 +58,87 @@ export default function RegisterProviderStep2() {
         location,
         isEnterprise: isEnterprise ? 'true' : 'false',
       },
-    });
+    } as any);
   };
+
+  const footer = (
+    <Button
+      title="Retour"
+      variant="outline"
+      icon={<ChevronLeft size={20} color={COLORS.primary} />}
+      onPress={() => router.back()}
+      fullWidth
+    />
+  );
 
   return (
     <ThemedView style={styles.container}>
-      <Stack.Screen options={{ title: 'Inscription Prestataire (2/3)' }} />
+      <Stack.Screen options={{ headerShown: false }} />
 
-      <ThemedText type="title" style={styles.title}>
-        Informations professionnelles
-      </ThemedText>
-
-      <ThemedText style={styles.label}>Numéro CIN</ThemedText>
-      <TextInput
-        style={styles.input}
-        placeholder="Votre numéro CIN"
-        value={CIN}
-        onChangeText={setCIN}
-      />
-
-      <ThemedText style={styles.label}>Localisation</ThemedText>
-      <TextInput
-        style={styles.input}
-        placeholder="Votre wilaya"
-        value={location}
-        onChangeText={setLocation}
-      />
-
-      <View style={styles.switchContainer}>
-        <ThemedText style={styles.label}>Entreprise</ThemedText>
-        <Switch
-          value={isEnterprise}
-          onValueChange={setIsEnterprise}
-          trackColor={{ false: '#767577', true: '#4CAF50' }}
-          thumbColor={isEnterprise ? '#f4f3f4' : '#f4f3f4'}
-        />
-      </View>
-
-      <TouchableOpacity
-        style={styles.button}
-        onPress={handleNext}
-        disabled={loading}
+      <AuthLayout
+        title="Informations professionnelles"
+        subtitle="Complétez vos informations professionnelles"
+        footer={footer}
+        showLogo={false}
       >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <ThemedText style={styles.buttonText}>Suivant</ThemedText>
-        )}
-      </TouchableOpacity>
+        <ProgressSteps
+          steps={['Compte', 'Professionnel', 'Profil']}
+          currentStep={1}
+        />
 
-      <TouchableOpacity style={styles.backLink} onPress={() => router.back()}>
-        <ThemedText style={styles.backLinkText}>Retour</ThemedText>
-      </TouchableOpacity>
+        {errors.general && (
+          <View style={styles.errorContainer}>
+            <ThemedText style={styles.errorText}>{errors.general}</ThemedText>
+          </View>
+        )}
+
+        <Input
+          label="Numéro CIN"
+          placeholder="Votre numéro CIN"
+          value={CIN}
+          onChangeText={(text) => {
+            setCIN(text);
+            if (errors.CIN) setErrors({ ...errors, CIN: undefined });
+          }}
+          leftIcon={<CreditCard size={20} color={COLORS.text} />}
+          error={errors.CIN}
+        />
+
+        <Input
+          label="Localisation"
+          placeholder="Votre wilaya"
+          value={location}
+          onChangeText={(text) => {
+            setLocation(text);
+            if (errors.location) setErrors({ ...errors, location: undefined });
+          }}
+          leftIcon={<MapPin size={20} color={COLORS.text} />}
+          error={errors.location}
+        />
+
+        <View style={styles.switchContainer}>
+          <View>
+            <ThemedText style={styles.switchLabel}>Entreprise</ThemedText>
+            <ThemedText style={styles.switchDescription}>
+              Activez cette option si vous représentez une entreprise
+            </ThemedText>
+          </View>
+          <Switch
+            value={isEnterprise}
+            onValueChange={setIsEnterprise}
+            trackColor={{ false: COLORS.gray, true: COLORS.primaryLight }}
+            thumbColor={isEnterprise ? COLORS.primary : COLORS.lightGray}
+          />
+        </View>
+
+        <Button
+          title="Suivant"
+          onPress={handleNext}
+          loading={loading}
+          style={styles.nextButton}
+          fullWidth
+        />
+      </AuthLayout>
     </ThemedView>
   );
 }
@@ -96,46 +146,34 @@ export default function RegisterProviderStep2() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
   },
-  title: {
-    fontSize: 24,
-    marginBottom: 20,
-    marginTop: 20,
-    textAlign: 'center',
-  },
-  label: {
-    marginBottom: 6,
-    fontWeight: '500',
-  },
-  input: {
-    backgroundColor: '#f0f0f0',
+  errorContainer: {
+    backgroundColor: COLORS.error,
+    padding: SPACING.sm,
     borderRadius: 8,
-    padding: 15,
-    marginBottom: 15,
+    marginBottom: SPACING.md,
+  },
+  errorText: {
+    color: COLORS.white,
+    textAlign: 'center',
   },
   switchContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 15,
-  },
-  button: {
-    backgroundColor: '#4CAF50',
-    padding: 15,
-    borderRadius: 8,
     alignItems: 'center',
-    marginTop: 10,
+    marginVertical: SPACING.md,
   },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+  switchLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: SPACING.xs,
   },
-  backLink: {
-    marginTop: 20,
-    alignItems: 'center',
+  switchDescription: {
+    fontSize: 14,
+    color: COLORS.textLight,
+    maxWidth: '80%',
   },
-  backLinkText: {
-    color: '#4CAF50',
+  nextButton: {
+    marginTop: SPACING.lg,
   },
 });

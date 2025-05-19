@@ -13,7 +13,12 @@ import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Header } from '@/components/Header';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { StatsCard } from '@/components/StatsCard';
+import { OrderCard } from '@/components/OrderCard';
 import { getCurrentUser } from '@/lib/api/auth';
+import { COLORS, FONTS, SPACING, SHADOWS } from '@/constants/theme';
 import {
   AlertCircle,
   BarChart2,
@@ -57,19 +62,19 @@ export default function ProviderDashboard() {
       id: 1,
       title: 'Commandes en cours',
       value: '3',
-      icon: <Clock size={24} color="#0066FF" />,
+      icon: <Clock size={24} color={COLORS.secondary} />,
     },
     {
       id: 2,
       title: 'Revenus du mois',
       value: '1250 DA',
-      icon: <DollarSign size={24} color="#4CAF50" />,
+      icon: <DollarSign size={24} color={COLORS.success} />,
     },
     {
       id: 3,
       title: 'Évaluation',
       value: '4.8',
-      icon: <Star size={24} color="#FFC107" />,
+      icon: <Star size={24} color={COLORS.accent} />,
     },
     {
       id: 4,
@@ -86,6 +91,7 @@ export default function ProviderDashboard() {
       service: 'Conception de logo',
       status: 'En cours',
       date: '15/04/2023',
+      price: '5000 DA',
     },
     {
       id: 2,
@@ -93,6 +99,7 @@ export default function ProviderDashboard() {
       service: 'Développement web',
       status: 'En attente',
       date: '12/04/2023',
+      price: '25000 DA',
     },
     {
       id: 3,
@@ -100,6 +107,7 @@ export default function ProviderDashboard() {
       service: 'Design graphique',
       status: 'Terminé',
       date: '08/04/2023',
+      price: '3000 DA',
     },
   ];
 
@@ -109,42 +117,59 @@ export default function ProviderDashboard() {
 
       <ScrollView
         style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[COLORS.primary]}
+          />
         }
       >
         {/* Provider Profile Summary */}
-        <View style={styles.profileSummary}>
-          <Image
-            source={{ uri: 'https://randomuser.me/api/portraits/men/32.jpg' }}
-            style={styles.profileImage}
-          />
-          <View style={styles.profileInfo}>
-            <ThemedText style={styles.profileName}>
-              {user?.provider?.name || 'Prestataire'}
-            </ThemedText>
-            <ThemedText style={styles.profileBio} numberOfLines={2}>
-              {user?.provider?.bio ||
-                'Votre bio professionnelle apparaîtra ici'}
-            </ThemedText>
-            <TouchableOpacity
-              style={styles.editProfileButton}
-              onPress={() => router.push('/profile' as any)}
-            >
-              <ThemedText style={styles.editProfileText}>
-                Modifier le profil
+        <Card variant="elevated" style={styles.profileCard}>
+          <View style={styles.profileHeader}>
+            <Image
+              source={{ uri: 'https://randomuser.me/api/portraits/men/32.jpg' }}
+              style={styles.profileImage}
+            />
+            <View style={styles.profileInfo}>
+              <ThemedText style={styles.profileName}>
+                {user?.provider?.name || 'Prestataire'}
               </ThemedText>
-            </TouchableOpacity>
+              <ThemedText style={styles.profileBio} numberOfLines={2}>
+                {user?.provider?.bio ||
+                  'Votre bio professionnelle apparaîtra ici'}
+              </ThemedText>
+            </View>
           </View>
-        </View>
+          <Button
+            title="Modifier le profil"
+            variant="outline"
+            size="small"
+            onPress={() => router.push('/profile' as any)}
+            style={styles.editProfileButton}
+          />
+        </Card>
 
         {/* Stats Grid */}
         <View style={styles.statsGrid}>
           {stats.map((stat) => (
             <View key={stat.id} style={styles.statCard}>
-              <View style={styles.statIconContainer}>{stat.icon}</View>
-              <ThemedText style={styles.statValue}>{stat.value}</ThemedText>
-              <ThemedText style={styles.statTitle}>{stat.title}</ThemedText>
+              <StatsCard
+                title={stat.title}
+                value={stat.value}
+                icon={stat.icon}
+                color={
+                  stat.id === 1
+                    ? COLORS.secondary
+                    : stat.id === 2
+                    ? COLORS.success
+                    : stat.id === 3
+                    ? COLORS.accent
+                    : '#9C27B0'
+                }
+              />
             </View>
           ))}
         </View>
@@ -156,26 +181,41 @@ export default function ProviderDashboard() {
             <TouchableOpacity
               style={styles.actionButton}
               onPress={() => router.push('/services' as any)}
+              activeOpacity={0.7}
             >
-              <View style={[styles.actionIcon, { backgroundColor: '#E3F2FD' }]}>
-                <BarChart2 size={24} color="#0066FF" />
+              <View
+                style={[
+                  styles.actionIcon,
+                  { backgroundColor: `${COLORS.secondary}15` },
+                ]}
+              >
+                <BarChart2 size={24} color={COLORS.secondary} />
               </View>
               <ThemedText style={styles.actionText}>Mes services</ThemedText>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionButton}
               onPress={() => router.push('/orders' as any)}
+              activeOpacity={0.7}
             >
-              <View style={[styles.actionIcon, { backgroundColor: '#E8F5E9' }]}>
-                <DollarSign size={24} color="#4CAF50" />
+              <View
+                style={[
+                  styles.actionIcon,
+                  { backgroundColor: `${COLORS.success}15` },
+                ]}
+              >
+                <DollarSign size={24} color={COLORS.success} />
               </View>
               <ThemedText style={styles.actionText}>Commandes</ThemedText>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionButton}
               onPress={() => router.push('/messages' as any)}
+              activeOpacity={0.7}
             >
-              <View style={[styles.actionIcon, { backgroundColor: '#F3E5F5' }]}>
+              <View
+                style={[styles.actionIcon, { backgroundColor: '#9C27B015' }]}
+              >
                 <MessageSquare size={24} color="#9C27B0" />
               </View>
               <ThemedText style={styles.actionText}>Messages</ThemedText>
@@ -191,53 +231,40 @@ export default function ProviderDashboard() {
           {recentOrders.length > 0 ? (
             <View style={styles.ordersContainer}>
               {recentOrders.map((order) => (
-                <View key={order.id} style={styles.orderCard}>
-                  <View style={styles.orderHeader}>
-                    <ThemedText style={styles.orderClient}>
-                      {order.client}
-                    </ThemedText>
-                    <ThemedText
-                      style={[
-                        styles.orderStatus,
-                        {
-                          color:
-                            order.status === 'En cours'
-                              ? '#0066FF'
-                              : order.status === 'En attente'
-                              ? '#FFC107'
-                              : '#4CAF50',
-                        },
-                      ]}
-                    >
-                      {order.status}
-                    </ThemedText>
-                  </View>
-                  <ThemedText style={styles.orderService}>
-                    {order.service}
-                  </ThemedText>
-                  <ThemedText style={styles.orderDate}>{order.date}</ThemedText>
-                </View>
+                <OrderCard
+                  key={order.id}
+                  client={order.client}
+                  service={order.service}
+                  price={order.price}
+                  status={order.status as any}
+                  date={order.date}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/orders/details',
+                      params: { id: order.id },
+                    } as any)
+                  }
+                />
               ))}
             </View>
           ) : (
-            <View style={styles.emptyState}>
-              <AlertCircle size={40} color="#757575" />
+            <Card variant="outlined" style={styles.emptyState}>
+              <AlertCircle size={40} color={COLORS.gray} />
               <ThemedText style={styles.emptyStateText}>
                 Aucune commande récente
               </ThemedText>
-            </View>
+            </Card>
           )}
         </View>
 
         {/* Add Service Button */}
-        <TouchableOpacity
-          style={styles.addServiceButton}
+        <Button
+          title="+ Ajouter un nouveau service"
+          variant="primary"
+          fullWidth
           onPress={() => router.push('/services/new' as any)}
-        >
-          <ThemedText style={styles.addServiceText}>
-            + Ajouter un nouveau service
-          </ThemedText>
-        </TouchableOpacity>
+          style={styles.addServiceButton}
+        />
       </ScrollView>
     </ThemedView>
   );
@@ -246,90 +273,61 @@ export default function ProviderDashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: COLORS.background,
   },
   scrollView: {
     flex: 1,
   },
-  profileSummary: {
+  scrollContent: {
+    padding: SPACING.md,
+    paddingBottom: SPACING.xxxl,
+  },
+  profileCard: {
+    marginBottom: SPACING.md,
+  },
+  profileHeader: {
     flexDirection: 'row',
-    padding: 16,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    margin: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    marginBottom: SPACING.md,
   },
   profileImage: {
     width: 70,
     height: 70,
     borderRadius: 35,
-    marginRight: 16,
+    marginRight: SPACING.md,
   },
   profileInfo: {
     flex: 1,
     justifyContent: 'center',
   },
   profileName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    ...FONTS.h3,
+    color: COLORS.text,
+    marginBottom: SPACING.xs,
   },
   profileBio: {
-    fontSize: 14,
-    color: '#666666',
-    marginBottom: 8,
+    ...FONTS.body2,
+    color: COLORS.textLight,
   },
   editProfileButton: {
     alignSelf: 'flex-start',
-  },
-  editProfileText: {
-    color: '#0066FF',
-    fontSize: 14,
   },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginHorizontal: 16,
+    marginBottom: SPACING.lg,
   },
   statCard: {
     width: '48%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  statIconContainer: {
-    marginBottom: 8,
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  statTitle: {
-    fontSize: 12,
-    color: '#666666',
-    textAlign: 'center',
+    marginBottom: SPACING.md,
   },
   section: {
-    marginHorizontal: 16,
-    marginBottom: 24,
+    marginBottom: SPACING.xl,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 16,
+    ...FONTS.h3,
+    color: COLORS.text,
+    marginBottom: SPACING.md,
   },
   quickActions: {
     flexDirection: 'row',
@@ -340,72 +338,33 @@ const styles = StyleSheet.create({
     width: '30%',
   },
   actionIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: SPACING.sm,
+    ...SHADOWS.small,
   },
   actionText: {
-    fontSize: 12,
+    ...FONTS.body2,
+    color: COLORS.text,
     textAlign: 'center',
   },
   ordersContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  orderCard: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEEEEE',
-  },
-  orderHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  orderClient: {
-    fontWeight: '600',
-  },
-  orderStatus: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  orderService: {
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  orderDate: {
-    fontSize: 12,
-    color: '#666666',
+    marginBottom: SPACING.md,
   },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    padding: 24,
+    padding: SPACING.xl,
   },
   emptyStateText: {
-    marginTop: 16,
-    color: '#757575',
+    ...FONTS.body1,
+    color: COLORS.gray,
+    marginTop: SPACING.md,
   },
   addServiceButton: {
-    backgroundColor: '#4CAF50',
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
-    margin: 16,
-  },
-  addServiceText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
+    marginTop: SPACING.md,
   },
 });

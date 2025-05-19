@@ -1,32 +1,49 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
-import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from '@/components/ThemedText';
+import { AuthLayout } from '@/components/ui/AuthLayout';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { ProgressSteps } from '@/components/ui/ProgressSteps';
 import { registerProvider } from '@/lib/api/auth';
+import { COLORS, SPACING } from '@/constants/theme';
+import { FileText, ChevronLeft } from 'lucide-react-native';
 
 export default function RegisterProviderStep3() {
   const params = useLocalSearchParams();
   const [bio, setBio] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{
+    bio?: string;
+    general?: string;
+  }>({});
   const router = useRouter();
 
-  const handleRegister = async () => {
+  const validateForm = () => {
+    const newErrors: {
+      bio?: string;
+    } = {};
+    let isValid = true;
+
     if (!bio) {
-      Alert.alert('Erreur', 'Veuillez remplir tous les champs');
-      return;
+      newErrors.bio = 'La bio professionnelle est requise';
+      isValid = false;
     }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  const handleRegister = async () => {
+    if (!validateForm()) return;
 
     try {
       setLoading(true);
+      setErrors({});
 
       // Prepare data from all steps
       const providerData = {
@@ -40,51 +57,72 @@ export default function RegisterProviderStep3() {
 
       await registerProvider(providerData);
       router.replace('/(provider)/dashboard' as any);
-    } catch (error) {
-      Alert.alert(
-        "Erreur d'inscription",
-        "Une erreur est survenue lors de l'inscription"
-      );
-      console.error(error);
+    } catch (error: any) {
+      console.error('Register error:', error);
+      setErrors({
+        general:
+          "Une erreur est survenue lors de l'inscription. Veuillez réessayer.",
+      });
     } finally {
       setLoading(false);
     }
   };
 
+  const footer = (
+    <Button
+      title="Retour"
+      variant="outline"
+      icon={<ChevronLeft size={20} color={COLORS.primary} />}
+      onPress={() => router.back()}
+      fullWidth
+    />
+  );
+
   return (
     <ThemedView style={styles.container}>
-      <Stack.Screen options={{ title: 'Inscription Prestataire (3/3)' }} />
+      <Stack.Screen options={{ headerShown: false }} />
 
-      <ThemedText type="title" style={styles.title}>
-        Votre profil
-      </ThemedText>
-
-      <ThemedText style={styles.label}>Bio professionnelle</ThemedText>
-      <TextInput
-        style={[styles.input, styles.bioInput]}
-        placeholder="Décrivez votre activité, vos compétences et votre expérience..."
-        value={bio}
-        onChangeText={setBio}
-        multiline
-        numberOfLines={6}
-        textAlignVertical="top"
-      />
-
-      <TouchableOpacity
-        style={styles.button}
-        onPress={handleRegister}
-        disabled={loading}
+      <AuthLayout
+        title="Votre profil professionnel"
+        subtitle="Décrivez votre activité et vos compétences"
+        footer={footer}
+        showLogo={false}
       >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <ThemedText style={styles.buttonText}>S'inscrire</ThemedText>
-        )}
-      </TouchableOpacity>
+        <ProgressSteps
+          steps={['Compte', 'Professionnel', 'Profil']}
+          currentStep={2}
+        />
 
-      <TouchableOpacity style={styles.backLink} onPress={() => router.back()}>
-        <ThemedText style={styles.backLinkText}>Retour</ThemedText>
-      </TouchableOpacity>
+        {errors.general && (
+          <View style={styles.errorContainer}>
+            <ThemedText style={styles.errorText}>{errors.general}</ThemedText>
+          </View>
+        )}
+
+        <Input
+          label="Bio professionnelle"
+          placeholder="Décrivez votre activité, vos compétences et votre expérience..."
+          value={bio}
+          onChangeText={(text) => {
+            setBio(text);
+            if (errors.bio) setErrors({ ...errors, bio: undefined });
+          }}
+          multiline
+          numberOfLines={6}
+          textAlignVertical="top"
+          style={styles.bioInput}
+          leftIcon={<FileText size={20} color={COLORS.text} />}
+          error={errors.bio}
+        />
+
+        <Button
+          title="Terminer l'inscription"
+          onPress={handleRegister}
+          loading={loading}
+          style={styles.registerButton}
+          fullWidth
+        />
+      </AuthLayout>
     </ThemedView>
   );
 }
@@ -92,44 +130,22 @@ export default function RegisterProviderStep3() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
   },
-  title: {
-    fontSize: 24,
-    marginBottom: 20,
-    marginTop: 20,
-    textAlign: 'center',
-  },
-  label: {
-    marginBottom: 6,
-    fontWeight: '500',
-  },
-  input: {
-    backgroundColor: '#f0f0f0',
+  errorContainer: {
+    backgroundColor: COLORS.error,
+    padding: SPACING.sm,
     borderRadius: 8,
-    padding: 15,
-    marginBottom: 15,
+    marginBottom: SPACING.md,
+  },
+  errorText: {
+    color: COLORS.white,
+    textAlign: 'center',
   },
   bioInput: {
     height: 150,
-    paddingTop: 15,
+    paddingTop: SPACING.sm,
   },
-  button: {
-    backgroundColor: '#4CAF50',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  backLink: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  backLinkText: {
-    color: '#4CAF50',
+  registerButton: {
+    marginTop: SPACING.lg,
   },
 });

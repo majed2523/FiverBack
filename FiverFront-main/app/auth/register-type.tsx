@@ -1,39 +1,87 @@
 'use client';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+
+import { StyleSheet, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { AuthLayout } from '@/components/ui/AuthLayout';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { ThemedText } from '@/components/ThemedText';
+import { COLORS, SPACING } from '@/constants/theme';
+import { User, Briefcase, ChevronLeft } from 'lucide-react-native';
 
 export default function RegisterTypeScreen() {
   const router = useRouter();
 
+  const handleClientRegistration = () => {
+    router.push('/auth/register-client' as any);
+  };
+
+  const handleProviderRegistration = () => {
+    router.push('/auth/register-provider/step1' as any);
+  };
+
+  const footer = (
+    <Button
+      title="Retour à la connexion"
+      variant="outline"
+      icon={<ChevronLeft size={20} color={COLORS.primary} />}
+      onPress={() => router.back()}
+      fullWidth
+    />
+  );
+
   return (
     <ThemedView style={styles.container}>
-      <Stack.Screen options={{ title: 'Inscription' }} />
+      <Stack.Screen options={{ headerShown: false }} />
 
-      <ThemedText type="title" style={styles.title}>
-        Je souhaite m'inscrire en tant que :
-      </ThemedText>
-
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => router.push('/auth/register-client' as any)}
+      <AuthLayout
+        title="Créer un compte"
+        subtitle="Choisissez votre type de compte"
+        footer={footer}
       >
-        <ThemedText style={styles.buttonText}>Client</ThemedText>
-      </TouchableOpacity>
+        <View style={styles.optionsContainer}>
+          <Card variant="elevated" style={styles.optionCard}>
+            <View style={styles.optionIconContainer}>
+              <User size={40} color={COLORS.secondary} />
+            </View>
+            <ThemedText style={styles.optionTitle}>Client</ThemedText>
+            <ThemedText style={styles.optionDescription}>
+              Créez un compte client pour rechercher et réserver des services
+            </ThemedText>
+            <Button
+              title="S'inscrire en tant que client"
+              variant="secondary"
+              onPress={handleClientRegistration}
+              style={styles.optionButton}
+              fullWidth
+            />
+          </Card>
 
-      <TouchableOpacity
-        style={[styles.button, styles.providerButton]}
-        onPress={() => router.push('/auth/register-provider/step1' as any)}
-      >
-        <ThemedText style={styles.buttonText}>Prestataire</ThemedText>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.backLink} onPress={() => router.back()}>
-        <ThemedText style={styles.backLinkText}>
-          Retour à la connexion
-        </ThemedText>
-      </TouchableOpacity>
+          <Card variant="elevated" style={styles.optionCard}>
+            <View
+              style={[
+                styles.optionIconContainer,
+                { backgroundColor: COLORS.primary + '15' },
+              ]}
+            >
+              <Briefcase size={40} color={COLORS.primary} />
+            </View>
+            <ThemedText style={styles.optionTitle}>Prestataire</ThemedText>
+            <ThemedText style={styles.optionDescription}>
+              Créez un compte prestataire pour offrir vos services et recevoir
+              des commandes
+            </ThemedText>
+            <Button
+              title="S'inscrire en tant que prestataire"
+              variant="primary"
+              onPress={handleProviderRegistration}
+              style={styles.optionButton}
+              fullWidth
+            />
+          </Card>
+        </View>
+      </AuthLayout>
     </ThemedView>
   );
 }
@@ -41,34 +89,36 @@ export default function RegisterTypeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+  },
+  optionsContainer: {
+    flex: 1,
     justifyContent: 'center',
+    gap: SPACING.xl,
   },
-  title: {
-    fontSize: 24,
-    marginBottom: 30,
-    textAlign: 'center',
-  },
-  button: {
-    backgroundColor: '#0066FF',
-    padding: 18,
-    borderRadius: 8,
+  optionCard: {
+    padding: SPACING.lg,
     alignItems: 'center',
-    marginBottom: 15,
   },
-  providerButton: {
-    backgroundColor: '#4CAF50',
+  optionIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: COLORS.secondary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
   },
-  buttonText: {
-    color: '#fff',
+  optionTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
-    fontSize: 16,
+    marginBottom: SPACING.xs,
   },
-  backLink: {
-    marginTop: 20,
-    alignItems: 'center',
+  optionDescription: {
+    textAlign: 'center',
+    color: COLORS.textLight,
+    marginBottom: SPACING.lg,
   },
-  backLinkText: {
-    color: '#0066FF',
+  optionButton: {
+    marginTop: SPACING.sm,
   },
 });

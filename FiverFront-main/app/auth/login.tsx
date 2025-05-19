@@ -1,34 +1,55 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  View,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-} from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { AuthLayout } from '@/components/ui/AuthLayout';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { ThemedText } from '@/components/ThemedText';
 import { loginUser } from '@/lib/api/auth';
+import { COLORS, SPACING } from '@/constants/theme';
+import { Mail, Lock } from 'lucide-react-native';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errors, setErrors] = useState<{
+    email?: string;
+    password?: string;
+    general?: string;
+  }>({});
   const router = useRouter();
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      setErrorMessage('Veuillez saisir votre email et mot de passe');
-      return;
+  const validateForm = () => {
+    const newErrors: { email?: string; password?: string } = {};
+    let isValid = true;
+
+    if (!email) {
+      newErrors.email = "L'email est requis";
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = "Format d'email invalide";
+      isValid = false;
     }
+
+    if (!password) {
+      newErrors.password = 'Le mot de passe est requis';
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  const handleLogin = async () => {
+    if (!validateForm()) return;
 
     try {
       setLoading(true);
-      setErrorMessage(null);
+      setErrors({});
       const response = await loginUser({ email, password });
 
       // Handle the response based on the role
@@ -37,73 +58,77 @@ export default function LoginScreen() {
       } else if (response.role === 'PROVIDER') {
         router.replace('/(provider)/dashboard' as any);
       } else {
-        setErrorMessage('Rôle utilisateur inconnu');
+        setErrors({ general: 'Rôle utilisateur inconnu' });
       }
     } catch (error: any) {
-      setErrorMessage(error.message || 'Email ou mot de passe incorrect');
+      setErrors({
+        general: error.message || 'Email ou mot de passe incorrect',
+      });
       console.error('Login Error:', error);
     } finally {
       setLoading(false);
     }
   };
 
+  const footer = (
+    <View style={styles.registerContainer}>
+      <ThemedText style={styles.registerText}>
+        Pas encore de compte ?{' '}
+      </ThemedText>
+      <TouchableOpacity
+        onPress={() => router.push('/auth/register-type' as any)}
+      >
+        <ThemedText style={styles.registerLink}>S'inscrire</ThemedText>
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <ThemedView style={styles.container}>
-      <Stack.Screen options={{ title: 'Connexion' }} />
+      <Stack.Screen options={{ headerShown: false }} />
 
-      <ThemedText type="title" style={styles.title}>
-        Connexion
-      </ThemedText>
-
-      {errorMessage && (
-        <View style={styles.errorContainer}>
-          <ThemedText style={styles.errorText}>{errorMessage}</ThemedText>
-        </View>
-      )}
-
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={(text) => {
-          setEmail(text);
-          setErrorMessage(null);
-        }}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Mot de passe"
-        value={password}
-        onChangeText={(text) => {
-          setPassword(text);
-          setErrorMessage(null);
-        }}
-        secureTextEntry
-      />
-
-      <TouchableOpacity
-        style={styles.button}
-        onPress={handleLogin}
-        disabled={loading}
+      <AuthLayout
+        title="Bienvenue"
+        subtitle="Connectez-vous pour accéder à votre compte"
+        footer={footer}
       >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <ThemedText style={styles.buttonText}>Se connecter</ThemedText>
+        {errors.general && (
+          <View style={styles.errorContainer}>
+            <ThemedText style={styles.errorText}>{errors.general}</ThemedText>
+          </View>
         )}
-      </TouchableOpacity>
 
-      <View style={styles.registerContainer}>
-        <ThemedText>Pas encore de compte ? </ThemedText>
-        <TouchableOpacity
-          onPress={() => router.push('/auth/register-type' as any)}
-        >
-          <ThemedText style={styles.registerLink}>S'inscrire</ThemedText>
-        </TouchableOpacity>
-      </View>
+        <Input
+          label="Email"
+          placeholder="Votre adresse email"
+          value={email}
+          onChangeText={(text) => {
+            setEmail(text);
+            setErrors({ ...errors, email: undefined });
+          }}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          error={errors.email}
+          leftIcon={<Mail size={20} color={COLORS.text} />}
+        />
+
+        <Input
+          label="Mot de passe"
+          placeholder="Votre mot de passe"
+          value={password}
+          onChangeText={(text) => {
+            setPassword(text);
+            setErrors({ ...errors, password: undefined });
+          }}
+          secureTextEntry
+          error={errors.password}
+          leftIcon={<Lock size={20} color={COLORS.text} />}
+        />
+
+        <Button onPress={handleLogin} loading={loading} style={styles.button}>
+          Se connecter
+        </Button>
+      </AuthLayout>
     </ThemedView>
   );
 }
@@ -111,48 +136,31 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 24,
-    marginBottom: 30,
-    textAlign: 'center',
   },
   errorContainer: {
-    backgroundColor: '#FFEBEE',
-    padding: 12,
+    backgroundColor: COLORS.error,
+    padding: SPACING.sm,
     borderRadius: 8,
-    marginBottom: 16,
+    marginBottom: SPACING.md,
   },
   errorText: {
-    color: '#D32F2F',
+    color: COLORS.white,
     textAlign: 'center',
   },
-  input: {
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 15,
-  },
   button: {
-    backgroundColor: '#0066FF',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    marginTop: SPACING.lg,
   },
   registerContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 20,
+    alignItems: 'center',
+    marginTop: SPACING.md,
+  },
+  registerText: {
+    color: COLORS.text,
   },
   registerLink: {
-    color: '#0066FF',
-    fontWeight: 'bold',
+    color: COLORS.primary,
+    marginLeft: 4,
   },
 });
