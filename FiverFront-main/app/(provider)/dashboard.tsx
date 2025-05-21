@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Image,
   RefreshControl,
+  Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
@@ -15,24 +16,66 @@ import { ThemedView } from '@/components/ThemedView';
 import { Header } from '@/components/Header';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { StatsCard } from '@/components/StatsCard';
 import { OrderCard } from '@/components/OrderCard';
 import { getCurrentUser } from '@/lib/api/auth';
-import { COLORS, FONTS, SPACING, SHADOWS } from '@/constants/theme';
+import {
+  COLORS,
+  FONTS,
+  SPACING,
+  SHADOWS,
+  ANIMATION,
+  SIZES,
+} from '@/constants/theme';
 import {
   AlertCircle,
-  BarChart2,
   Clock,
   DollarSign,
   MessageSquare,
   Star,
+  Wrench,
+  Briefcase,
+  User,
 } from 'lucide-react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+  FadeInDown,
+  SlideInRight,
+  SlideInUp,
+} from 'react-native-reanimated';
 
-export default function ProviderDashboard() {
+const { width } = Dimensions.get('window');
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+
+function ProviderDashboard() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  const servicesScale = useSharedValue(1);
+  const ordersScale = useSharedValue(1);
+  const profileScale = useSharedValue(1);
+
+  const servicesAnimationStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: servicesScale.value }],
+    };
+  });
+
+  const ordersAnimationStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: ordersScale.value }],
+    };
+  });
+
+  const profileAnimationStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: profileScale.value }],
+    };
+  });
 
   const fetchUserData = async () => {
     try {
@@ -62,25 +105,25 @@ export default function ProviderDashboard() {
       id: 1,
       title: 'Commandes en cours',
       value: '3',
-      icon: <Clock size={24} color={COLORS.secondary} />,
+      icon: <Clock size={24} color={COLORS.white} />,
     },
     {
       id: 2,
       title: 'Revenus du mois',
       value: '1250 DA',
-      icon: <DollarSign size={24} color={COLORS.success} />,
+      icon: <DollarSign size={24} color={COLORS.white} />,
     },
     {
       id: 3,
       title: 'Évaluation',
       value: '4.8',
-      icon: <Star size={24} color={COLORS.accent} />,
+      icon: <Star size={24} color={COLORS.white} />,
     },
     {
       id: 4,
       title: 'Messages',
       value: '5',
-      icon: <MessageSquare size={24} color="#9C27B0" />,
+      icon: <MessageSquare size={24} color={COLORS.white} />,
     },
   ];
 
@@ -111,140 +154,211 @@ export default function ProviderDashboard() {
     },
   ];
 
+  const servicesOnPressIn = () => {
+    servicesScale.value = withTiming(0.95, {
+      duration: ANIMATION.fast,
+      easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+    });
+  };
+
+  const servicesOnPressOut = () => {
+    servicesScale.value = withTiming(1, {
+      duration: ANIMATION.fast,
+      easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+    });
+  };
+
+  const ordersOnPressIn = () => {
+    ordersScale.value = withTiming(0.95, {
+      duration: ANIMATION.fast,
+      easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+    });
+  };
+
+  const ordersOnPressOut = () => {
+    ordersScale.value = withTiming(1, {
+      duration: ANIMATION.fast,
+      easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+    });
+  };
+
+  const profileOnPressIn = () => {
+    profileScale.value = withTiming(0.95, {
+      duration: ANIMATION.fast,
+      easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+    });
+  };
+
+  const profileOnPressOut = () => {
+    profileScale.value = withTiming(1, {
+      duration: ANIMATION.fast,
+      easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+    });
+  };
+
   return (
     <ThemedView style={styles.container}>
-      <Header title="Tableau de bord" showMenu />
+      <Animated.View entering={SlideInUp.delay(100).duration(500)}>
+        <Header showLogo showMenu />
+      </Animated.View>
 
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[COLORS.primary]}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Provider Profile Summary */}
-        <Card variant="elevated" style={styles.profileCard}>
-          <View style={styles.profileHeader}>
-            <Image
-              source={{ uri: 'https://randomuser.me/api/portraits/men/32.jpg' }}
-              style={styles.profileImage}
-            />
-            <View style={styles.profileInfo}>
-              <ThemedText style={styles.profileName}>
-                {user?.provider?.name || 'Prestataire'}
+        {/* Welcome Banner */}
+        <Animated.View entering={FadeInDown.delay(200).duration(500)}>
+          <Card variant="elevated" style={styles.welcomeCard}>
+            <View style={styles.welcomeContent}>
+              <ThemedText style={styles.welcomeTitle}>
+                Bienvenue, {user?.provider?.name || 'Prestataire'}!
               </ThemedText>
-              <ThemedText style={styles.profileBio} numberOfLines={2}>
-                {user?.provider?.bio ||
-                  'Votre bio professionnelle apparaîtra ici'}
+              <ThemedText style={styles.welcomeSubtitle}>
+                Gérez vos services et commandes
               </ThemedText>
-            </View>
-          </View>
-          <Button
-            title="Modifier le profil"
-            variant="outline"
-            size="small"
-            onPress={() => router.push('/profile' as any)}
-            style={styles.editProfileButton}
-          />
-        </Card>
-
-        {/* Stats Grid */}
-        <View style={styles.statsGrid}>
-          {stats.map((stat) => (
-            <View key={stat.id} style={styles.statCard}>
-              <StatsCard
-                title={stat.title}
-                value={stat.value}
-                icon={stat.icon}
-                color={
-                  stat.id === 1
-                    ? COLORS.secondary
-                    : stat.id === 2
-                    ? COLORS.success
-                    : stat.id === 3
-                    ? COLORS.accent
-                    : '#9C27B0'
-                }
+              <Button
+                title="Voir mon profil"
+                variant="outline"
+                size="small"
+                onPress={() => router.push('/profile' as any)}
+                style={styles.welcomeButton}
               />
             </View>
+            <View style={styles.welcomeImageContainer}>
+              <Image
+                source={{
+                  uri: 'https://randomuser.me/api/portraits/men/32.jpg',
+                }}
+                style={styles.welcomeImage}
+              />
+            </View>
+          </Card>
+        </Animated.View>
+
+        {/* Stats Grid */}
+        <Animated.View
+          entering={FadeInDown.delay(300).duration(500)}
+          style={styles.statsGrid}
+        >
+          {stats.map((stat, index) => (
+            <Animated.View
+              key={stat.id}
+              style={styles.statCard}
+              entering={SlideInRight.delay(400 + index * 100).duration(500)}
+            >
+              <Card
+                variant="elevated"
+                style={[
+                  styles.statCardInner,
+                  {
+                    backgroundColor:
+                      index === 0
+                        ? COLORS.secondary
+                        : index === 1
+                        ? COLORS.primary
+                        : index === 2
+                        ? COLORS.accent
+                        : '#9C27B0',
+                  },
+                ]}
+              >
+                <View style={styles.statIcon}>{stat.icon}</View>
+                <ThemedText style={styles.statValue}>{stat.value}</ThemedText>
+                <ThemedText style={styles.statTitle}>{stat.title}</ThemedText>
+              </Card>
+            </Animated.View>
           ))}
-        </View>
+        </Animated.View>
 
         {/* Quick Actions */}
-        <View style={styles.section}>
+        <Animated.View
+          entering={FadeInDown.delay(500).duration(500)}
+          style={styles.section}
+        >
           <ThemedText style={styles.sectionTitle}>Actions rapides</ThemedText>
           <View style={styles.quickActions}>
-            <TouchableOpacity
-              style={styles.actionButton}
+            <AnimatedTouchable
+              style={[styles.actionButton, servicesAnimationStyle]}
               onPress={() => router.push('/services' as any)}
+              onPressIn={servicesOnPressIn}
+              onPressOut={servicesOnPressOut}
               activeOpacity={0.7}
             >
               <View
-                style={[
-                  styles.actionIcon,
-                  { backgroundColor: `${COLORS.secondary}15` },
-                ]}
+                style={[styles.actionIcon, { backgroundColor: COLORS.primary }]}
               >
-                <BarChart2 size={24} color={COLORS.secondary} />
+                <Wrench size={24} color={COLORS.white} />
               </View>
               <ThemedText style={styles.actionText}>Mes services</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.actionButton}
+            </AnimatedTouchable>
+
+            <AnimatedTouchable
+              style={[styles.actionButton, ordersAnimationStyle]}
               onPress={() => router.push('/orders' as any)}
+              onPressIn={ordersOnPressIn}
+              onPressOut={ordersOnPressOut}
               activeOpacity={0.7}
             >
               <View
                 style={[
                   styles.actionIcon,
-                  { backgroundColor: `${COLORS.success}15` },
+                  { backgroundColor: COLORS.secondary },
                 ]}
               >
-                <DollarSign size={24} color={COLORS.success} />
+                <Briefcase size={24} color={COLORS.white} />
               </View>
               <ThemedText style={styles.actionText}>Commandes</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => router.push('/messages' as any)}
+            </AnimatedTouchable>
+
+            <AnimatedTouchable
+              style={[styles.actionButton, profileAnimationStyle]}
+              onPress={() => router.push('/profile' as any)}
+              onPressIn={profileOnPressIn}
+              onPressOut={profileOnPressOut}
               activeOpacity={0.7}
             >
               <View
-                style={[styles.actionIcon, { backgroundColor: '#9C27B015' }]}
+                style={[styles.actionIcon, { backgroundColor: COLORS.accent }]}
               >
-                <MessageSquare size={24} color="#9C27B0" />
+                <User size={24} color={COLORS.white} />
               </View>
-              <ThemedText style={styles.actionText}>Messages</ThemedText>
-            </TouchableOpacity>
+              <ThemedText style={styles.actionText}>Profil</ThemedText>
+            </AnimatedTouchable>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Recent Orders */}
-        <View style={styles.section}>
+        <Animated.View
+          entering={FadeInDown.delay(600).duration(500)}
+          style={styles.section}
+        >
           <ThemedText style={styles.sectionTitle}>
             Commandes récentes
           </ThemedText>
           {recentOrders.length > 0 ? (
             <View style={styles.ordersContainer}>
-              {recentOrders.map((order) => (
-                <OrderCard
+              {recentOrders.map((order, index) => (
+                <Animated.View
                   key={order.id}
-                  client={order.client}
-                  service={order.service}
-                  price={order.price}
-                  status={order.status as any}
-                  date={order.date}
-                  onPress={() =>
-                    router.push({
-                      pathname: '/orders/details',
-                      params: { id: order.id },
-                    } as any)
-                  }
-                />
+                  entering={FadeInDown.delay(700 + index * 100).duration(500)}
+                >
+                  <OrderCard
+                    client={order.client}
+                    service={order.service}
+                    price={order.price}
+                    status={order.status as any}
+                    date={order.date}
+                    onPress={() =>
+                      router.push({
+                        pathname: '/orders/details',
+                        params: { id: order.id },
+                      } as any)
+                    }
+                  />
+                </Animated.View>
               ))}
             </View>
           ) : (
@@ -255,20 +369,24 @@ export default function ProviderDashboard() {
               </ThemedText>
             </Card>
           )}
-        </View>
+        </Animated.View>
 
         {/* Add Service Button */}
-        <Button
-          title="+ Ajouter un nouveau service"
-          variant="primary"
-          fullWidth
-          onPress={() => router.push('/services/new' as any)}
-          style={styles.addServiceButton}
-        />
+        <Animated.View entering={FadeInDown.delay(800).duration(500)}>
+          <Button
+            title="+ Ajouter un nouveau service"
+            variant="primary"
+            fullWidth
+            onPress={() => router.push('/services/new' as any)}
+            style={styles.addServiceButton}
+          />
+        </Animated.View>
       </ScrollView>
     </ThemedView>
   );
 }
+
+export default ProviderDashboard;
 
 const styles = StyleSheet.create({
   container: {
@@ -282,34 +400,43 @@ const styles = StyleSheet.create({
     padding: SPACING.md,
     paddingBottom: SPACING.xxxl,
   },
-  profileCard: {
+  welcomeCard: {
     marginBottom: SPACING.md,
-  },
-  profileHeader: {
+    backgroundColor: COLORS.secondary,
     flexDirection: 'row',
-    marginBottom: SPACING.md,
+    padding: SPACING.lg,
   },
-  profileImage: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    marginRight: SPACING.md,
-  },
-  profileInfo: {
+  welcomeContent: {
     flex: 1,
     justifyContent: 'center',
   },
-  profileName: {
+  welcomeTitle: {
     ...FONTS.h3,
-    color: COLORS.text,
+    color: COLORS.white,
     marginBottom: SPACING.xs,
   },
-  profileBio: {
+  welcomeSubtitle: {
     ...FONTS.body2,
-    color: COLORS.textLight,
+    color: COLORS.white,
+    opacity: 0.8,
+    marginBottom: SPACING.md,
   },
-  editProfileButton: {
+  welcomeButton: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderColor: COLORS.white,
     alignSelf: 'flex-start',
+  },
+  welcomeImageContainer: {
+    width: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  welcomeImage: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    borderWidth: 2,
+    borderColor: COLORS.white,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -321,12 +448,36 @@ const styles = StyleSheet.create({
     width: '48%',
     marginBottom: SPACING.md,
   },
+  statCardInner: {
+    padding: SPACING.md,
+    alignItems: 'center',
+  },
+  statIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+  },
+  statValue: {
+    ...FONTS.h2,
+    color: COLORS.white,
+    marginBottom: 4,
+  },
+  statTitle: {
+    ...FONTS.caption,
+    color: COLORS.white,
+    opacity: 0.8,
+    textAlign: 'center',
+  },
   section: {
     marginBottom: SPACING.xl,
   },
   sectionTitle: {
     ...FONTS.h3,
-    color: COLORS.text,
+    color: COLORS.secondary,
     marginBottom: SPACING.md,
   },
   quickActions: {
@@ -338,18 +489,19 @@ const styles = StyleSheet.create({
     width: '30%',
   },
   actionIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: SPACING.sm,
-    ...SHADOWS.small,
+    ...SHADOWS.medium,
   },
   actionText: {
     ...FONTS.body2,
-    color: COLORS.text,
+    color: COLORS.secondary,
     textAlign: 'center',
+    fontWeight: '500',
   },
   ordersContainer: {
     marginBottom: SPACING.md,

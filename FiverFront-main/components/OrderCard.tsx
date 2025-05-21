@@ -1,17 +1,35 @@
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  type ViewStyle,
+} from 'react-native';
 import { ThemedText } from './ThemedText';
 import { Card } from './ui/Card';
 import { Badge } from './ui/Badge';
-import { COLORS, FONTS, SPACING } from '@/constants/theme';
+import { COLORS, FONTS, SPACING, ANIMATION } from '@/constants/theme';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+  cancelAnimation,
+} from 'react-native-reanimated';
+import { useEffect } from 'react';
+
+type OrderStatus = 'En cours' | 'En attente' | 'Terminé' | 'Annulé';
 
 interface OrderCardProps {
   client: string;
   service: string;
   price: string;
-  status: 'En cours' | 'En attente' | 'Terminé' | 'Annulé';
+  status: OrderStatus;
   date: string;
   onPress?: () => void;
+  style?: ViewStyle;
 }
+
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 export function OrderCard({
   client,
@@ -20,8 +38,48 @@ export function OrderCard({
   status,
   date,
   onPress,
+  style,
 }: OrderCardProps) {
-  const getStatusVariant = () => {
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    return () => {
+      cancelAnimation(scale);
+    };
+  }, [scale]);
+
+  const onPressIn = () => {
+    try {
+      scale.value = withTiming(0.98, {
+        duration: ANIMATION.fast,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      });
+    } catch (error) {
+      console.error('Animation error:', error);
+    }
+  };
+
+  const onPressOut = () => {
+    try {
+      scale.value = withTiming(1, {
+        duration: ANIMATION.fast,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      });
+    } catch (error) {
+      console.error('Animation error:', error);
+    }
+  };
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const getStatusVariant = ():
+    | 'info'
+    | 'warning'
+    | 'success'
+    | 'error'
+    | 'default' => {
     switch (status) {
       case 'En cours':
         return 'info';
@@ -37,8 +95,14 @@ export function OrderCard({
   };
 
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
-      <Card variant="elevated" style={styles.card}>
+    <AnimatedTouchable
+      onPress={onPress}
+      activeOpacity={0.7}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
+      style={animatedStyle}
+    >
+      <Card variant="elevated" style={[styles.card, style]}>
         <View style={styles.header}>
           <ThemedText style={styles.client}>{client}</ThemedText>
           <Badge label={status} variant={getStatusVariant()} />
@@ -49,13 +113,15 @@ export function OrderCard({
           <ThemedText style={styles.date}>{date}</ThemedText>
         </View>
       </Card>
-    </TouchableOpacity>
+    </AnimatedTouchable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
     marginBottom: SPACING.md,
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.primary,
   },
   header: {
     flexDirection: 'row',
@@ -65,7 +131,7 @@ const styles = StyleSheet.create({
   },
   client: {
     ...FONTS.h4,
-    color: COLORS.text,
+    color: COLORS.secondary,
   },
   service: {
     ...FONTS.body2,
