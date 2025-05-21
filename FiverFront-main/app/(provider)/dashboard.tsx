@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: SPACING.md,
-    paddingBottom: SPACING.xxxl,
+    paddingBottom: SIZES.xxxl,
   },
   welcomeCard: {
     marginBottom: SPACING.md,
@@ -501,7 +501,7 @@ const styles = StyleSheet.create({
     ...FONTS.body2,
     color: COLORS.secondary,
     textAlign: 'center',
-    fontWeight: '500',
+    fontWeight: '500' as const,
   },
   ordersContainer: {
     marginBottom: SPACING.md,

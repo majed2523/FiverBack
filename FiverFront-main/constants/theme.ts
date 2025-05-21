@@ -49,42 +49,42 @@ export const COLORS = {
 export const FONTS = {
   h1: {
     fontSize: scale(28),
-    fontWeight: '700',
+    fontWeight: 700,
     letterSpacing: 0.5,
   },
   h2: {
     fontSize: scale(24),
-    fontWeight: '700',
+    fontWeight: 700,
     letterSpacing: 0.5,
   },
   h3: {
     fontSize: scale(20),
-    fontWeight: '600',
+    fontWeight: 600,
     letterSpacing: 0.5,
   },
   h4: {
     fontSize: scale(18),
-    fontWeight: '600',
+    fontWeight: 600,
     letterSpacing: 0.5,
   },
   body1: {
     fontSize: scale(16),
-    fontWeight: '400',
+    fontWeight: 400,
     letterSpacing: 0.5,
   },
   body2: {
     fontSize: scale(14),
-    fontWeight: '400',
+    fontWeight: 400,
     letterSpacing: 0.5,
   },
   caption: {
     fontSize: scale(12),
-    fontWeight: '400',
+    fontWeight: 400,
     letterSpacing: 0.5,
   },
   button: {
     fontSize: scale(16),
-    fontWeight: '600',
+    fontWeight: 600,
     letterSpacing: 0.5,
   },
 };
